@@ -36,7 +36,7 @@ public class Main {
         String action = scanner.nextLine().trim();
         switch (action) {
           case "add" -> addMeal(scanner, meals);
-          case "show" -> showMeals(meals);
+          case "show" -> showMeals(scanner, meals);
           case "exit" -> {
             System.out.println("Bye!");
             return;
@@ -172,14 +172,31 @@ public class Main {
     }
   }
 
-  /** Prints all saved meals in insertion order, or a message when none exist. */
-  private static void showMeals(List<Meal> meals) {
-    if (meals.isEmpty()) {
-      System.out.println("No meals saved. Add a meal first.");
+  /**
+   * Asks for a category, then prints only the meals in that category
+   * or a message when none exist for it.
+   */
+  private static void showMeals(Scanner scanner, List<Meal> meals) {
+    String category;
+    while (true) {
+      System.out.println("Which category do you want to print (breakfast, lunch, dinner)?");
+      category = scanner.nextLine().trim();
+      if (VALID_CATEGORIES.contains(category)) break;
+      System.out.println("Wrong meal category! Choose from: breakfast, lunch, dinner.");
+    }
+
+    final String selectedCategory = category;
+    List<Meal> filtered = meals.stream()
+        .filter(m -> m.category().equals(selectedCategory))
+        .toList();
+
+    if (filtered.isEmpty()) {
+      System.out.println("No meals found.");
       return;
     }
-    for (Meal meal : meals) {
-      System.out.println("Category: " + meal.category());
+
+    System.out.println("Category: " + category);
+    for (Meal meal : filtered) {
       System.out.println("Name: " + meal.name());
       System.out.println("Ingredients:");
       for (String ingredient : meal.ingredients()) {
