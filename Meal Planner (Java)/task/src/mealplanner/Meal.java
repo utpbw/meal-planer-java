@@ -1,4 +1,4 @@
 package mealplanner;
 
-/** Immutable value type representing a meal with a category, name, and ordered ingredient list. */
-record Meal(String category, String name, String[] ingredients) {}
+/** Immutable value type representing a persisted meal with its database id, category, name, and ingredients. */
+record Meal(int id, String category, String name, String[] ingredients) {}
