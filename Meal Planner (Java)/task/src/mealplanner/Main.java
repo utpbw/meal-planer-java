@@ -1,5 +1,6 @@
 package mealplanner;
 
+import java.io.*;
 import java.sql.*;
 import java.util.*;
 
@@ -32,13 +33,14 @@ public class Main {
       Scanner scanner = new Scanner(System.in);
 
       while (true) {
-        System.out.println("What would you like to do (add, show, plan, list plan, exit)?");
+        System.out.println("What would you like to do (add, show, plan, list plan, save, exit)?");
         String action = scanner.nextLine().trim();
         switch (action) {
           case "add" -> addMeal(scanner, meals);
           case "show" -> showMeals(scanner, meals);
           case "plan" -> planWeek(scanner, meals);
           case "list plan" -> listPlan();
+          case "save" -> saveShoppingList(scanner);
           case "exit" -> {
             System.out.println("Bye!");
             return;
@@ -316,5 +318,48 @@ public class Main {
       }
     }
     return plan;
+  }
+
+  /**
+   * Builds a shopping list from the saved weekly plan, aggregating duplicate
+   * ingredients, and writes it to a user-named file.
+   */
+  private static void saveShoppingList(Scanner scanner) throws SQLException, IOException {
+    boolean planExists;
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM plan")) {
+      rs.next();
+      planExists = rs.getInt(1) > 0;
+    }
+    if (!planExists) {
+      System.out.println("Unable to save. Plan your meals first.");
+      return;
+    }
+
+    System.out.println("Input a filename:");
+    String filename = scanner.nextLine().trim();
+
+    Map<String, Integer> shoppingList = new LinkedHashMap<>();
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(
+             "SELECT i.ingredient FROM plan p " +
+             "JOIN ingredients i ON p.meal_id = i.meal_id " +
+             "ORDER BY i.ingredient_id")) {
+      while (rs.next()) {
+        shoppingList.merge(rs.getString("ingredient"), 1, Integer::sum);
+      }
+    }
+
+    try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
+      for (Map.Entry<String, Integer> entry : shoppingList.entrySet()) {
+        if (entry.getValue() > 1) {
+          writer.println(entry.getKey() + " x" + entry.getValue());
+        } else {
+          writer.println(entry.getKey());
+        }
+      }
+    }
+
+    System.out.println("Saved!");
   }
 }
